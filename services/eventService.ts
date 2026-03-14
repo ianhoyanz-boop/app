@@ -1,62 +1,62 @@
 import { UserPreferences, EventRecommendation, EventCategory, EventReminder, ReminderLevel, UserPersona, EventFeedback } from "../types";
 
-const anthropicApiKey = process.env.ANTHROPIC_API_KEY || '';
+const geminiApiKey = process.env.GEMINI_API_KEY || '';
 
 // ==================== Storage Keys ====================
 const PREFS_STORAGE_KEY = 'lingotube_event_preferences';
 const REMINDERS_STORAGE_KEY = 'lingotube_event_reminders';
 const PERSONA_STORAGE_KEY = 'lingotube_user_persona';
 
-// ==================== Claude API Helper ====================
-interface ClaudeMessage {
+// ==================== Gemini API Helper ====================
+interface GeminiMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-async function callClaude(
-  messages: ClaudeMessage[],
+async function callGemini(
+  messages: GeminiMessage[],
   systemPrompt: string,
   useWebSearch: boolean = false
 ): Promise<string> {
-  if (!anthropicApiKey) throw new Error("Anthropic API Key is missing. Set ANTHROPIC_API_KEY in .env.local");
+  if (!geminiApiKey) throw new Error("Gemini API Key is missing. Set GEMINI_API_KEY in .env.local");
+
+  const contents = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
 
   const body: any = {
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
-    system: systemPrompt,
-    messages,
+    contents,
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    generationConfig: {
+      maxOutputTokens: 4096,
+    },
   };
 
   if (useWebSearch) {
-    body.tools = [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 5,
-      }
-    ];
+    body.tools = [{ googleSearch: {} }];
   }
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": anthropicApiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify(body),
-  });
+  const model = 'gemini-2.0-flash';
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Claude API error: ${response.status} - ${errorText}`);
+    throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
-  // Extract text from response content blocks
-  const textBlocks = (data.content || []).filter((b: any) => b.type === 'text');
-  return textBlocks.map((b: any) => b.text).join('\n');
+  const candidates = data.candidates || [];
+  if (candidates.length === 0) throw new Error('Gemini 没有返回结果');
+  const parts = candidates[0].content?.parts || [];
+  return parts.filter((p: any) => p.text).map((p: any) => p.text).join('\n');
 }
 
 // ==================== Category Labels ====================
@@ -141,7 +141,7 @@ export const addEventFeedback = async (
     persona.dislikedEvents = [feedback, ...persona.dislikedEvents].slice(0, 50);
   }
 
-  // Ask Claude to update the persona summary based on new feedback
+  // Ask Gemini to update the persona summary based on new feedback
   try {
     const updatedSummary = await updatePersonaSummary(persona);
     persona.aiPersonaSummary = updatedSummary;
@@ -182,13 +182,13 @@ ${dislikedSummary || '暂无数据'}
 
 请直接输出更新后的画像总结，不要有任何前缀。`;
 
-  return await callClaude(
+  return await callGemini(
     [{ role: 'user', content: prompt }],
     '你是一个用户画像分析专家，擅长从用户行为中提取偏好模式。'
   );
 }
 
-// ==================== Event Search (Claude + Web Search) ====================
+// ==================== Event Search (Gemini + Google Search) ====================
 export const searchEvents = async (prefs: UserPreferences): Promise<EventRecommendation[]> => {
   const persona = loadPersona();
 
@@ -248,10 +248,10 @@ ${keywordText}
   ]
 }`;
 
-  const responseText = await callClaude(
+  const responseText = await callGemini(
     [{ role: 'user', content: userMessage }],
     systemPrompt,
-    true // use web search
+    true // use Google Search
   );
 
   // Parse JSON from response (handle potential markdown code blocks)
@@ -286,7 +286,7 @@ ${keywordText}
   }
 };
 
-// ==================== Event Advice (Claude) ====================
+// ==================== Event Advice (Gemini) ====================
 export const getEventAdvice = async (event: EventRecommendation, question: string): Promise<string> => {
   const systemPrompt = `你是一个热心的活动助手。用户正在考虑参加一个活动，请用中文简洁回答他们的问题。
 可以搜索最新信息来帮助回答关于购票、交通、周边美食等问题。`;
@@ -299,7 +299,7 @@ export const getEventAdvice = async (event: EventRecommendation, question: strin
 
 我的问题：${question}`;
 
-  return await callClaude(
+  return await callGemini(
     [{ role: 'user', content: userMessage }],
     systemPrompt,
     true
