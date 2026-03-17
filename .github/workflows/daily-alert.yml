@@ -1,23 +1,24 @@
-name: 周末活动推荐
+name: 每日紧急提醒
 
-# 每周五中午12点（北京时间）推送完整周末推荐
+# 每天早上9点（北京时间）检查紧急提醒
+# 只有紧急/重要事项时才推送，不会打扰你
 on:
   schedule:
-    - cron: '0 4 * * 5'  # UTC 4:00 = 北京时间 12:00 周五
+    - cron: '0 1 * * *'  # UTC 1:00 = 北京时间 9:00
   workflow_dispatch:
 
 jobs:
-  recommend:
+  daily-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: 推送周末完整推荐
+      - name: 检查紧急提醒
         env:
           PUSH_METHOD: ${{ secrets.PUSH_METHOD }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
           USER_PREFERENCES: ${{ secrets.USER_PREFERENCES }}
-        run: node src/index.js
+        run: node src/index.js --daily

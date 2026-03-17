@@ -1,11 +1,12 @@
 {
   "name": "weekend-buddy",
   "version": "1.0.0",
-  "description": "微信推送周末活动推荐助手",
+  "description": "微信推送周末活动推荐助手 - 分级提醒，不错过任何想看的演出",
   "type": "module",
   "scripts": {
-    "recommend": "node src/index.js",
-    "test-push": "node src/index.js --test"
+    "start": "node src/index.js",
+    "test": "node src/index.js --test",
+    "daily": "node src/index.js --daily --test"
   },
   "dependencies": {}
 }
