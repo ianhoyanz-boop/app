@@ -1,56 +1,13 @@
-export interface TranscriptSegment {
-  id: number;
-  startTime: number; // Virtual timestamp for ordering
-  endTime: number;   // Virtual timestamp
-  textEn: string;
-  textZh: string;
-  audioUrl?: string; // Cache for the generated TTS audio blob URL
-  isLoadingAudio?: boolean;
-}
-
-export interface Note {
-  id: string;
-  original: string; // The word or sentence
-  translation?: string;
-  context?: string; // The full sentence it came from
-  type: 'word' | 'sentence';
-  timestamp: number;
-}
-
-export interface AudioBlogState {
-  status: 'idle' | 'generating_script' | 'generating_audio' | 'playing' | 'error';
-  audioData?: AudioBuffer;
-  script?: string;
-}
-
-export interface Lesson {
-  title: string;
-  transcript: TranscriptSegment[];
-  // Removed videoId as we are no longer using YouTube Player
-}
-
-export enum AppView {
-  LANDING = 'LANDING',
-  PLAYER = 'PLAYER',
-  NOTEBOOK = 'NOTEBOOK',
-  EVENTS = 'EVENTS'
-}
-
-export type StudyMode = 'standard' | 'practice';
-
-// Event Recommendation Types
-export type EventCategory = 'concert' | 'comedy' | 'theater' | 'exhibition' | 'sports' | 'festival' | 'movie' | 'workshop' | 'other';
-
 export interface UserPreferences {
+  categories: string[];
   city: string;
-  categories: EventCategory[];
+  budget: 'low' | 'medium' | 'high' | 'any';
+  preferredDays: ('saturday' | 'sunday')[];
   favoriteArtists: string[];
-  priceRange: { min: number; max: number };
-  preferredDays: ('friday' | 'saturday' | 'sunday')[];
-  keywords: string[];
+  interests: string[];
 }
 
-export interface EventRecommendation {
+export interface Event {
   id: string;
   title: string;
   category: EventCategory;
@@ -58,54 +15,46 @@ export interface EventRecommendation {
   time: string;
   venue: string;
   city: string;
+  price: number;
+  priceRange: string;
   description: string;
-  price: string;
-  matchScore: number; // 0-100, how well it matches preferences
-  matchReason: string;
-  ticketUrl?: string;
-  source?: string;
+  image: string;
+  tags: string[];
+  ticketUrl: string;
+  matchScore: number;
+  reminder?: Reminder;
 }
 
-export interface EventSearchState {
-  status: 'idle' | 'searching' | 'done' | 'error';
-  events: EventRecommendation[];
-  error?: string;
-}
-
-// Reminder urgency levels
-export type ReminderLevel = 'urgent' | 'important' | 'watch' | 'bookmark';
-
-export interface EventReminder {
-  id: string;
+export interface Reminder {
   eventId: string;
-  eventTitle: string;
-  level: ReminderLevel;
-  triggerDate: string; // when to remind
-  eventDate: string;
-  note: string; // e.g. "开票日" or "演出日"
-  ticketUrl?: string;
-  dismissed: boolean;
+  remindAt: string;
+  type: 'ticket_sale' | 'event_day' | 'custom';
+  notified: boolean;
 }
 
-// User Persona - learned from interactions and feedback
-export interface UserPersona {
-  // Explicit info
-  name: string;
-  bio: string; // free-form self description
-  // Learned taste profile
-  likedEvents: EventFeedback[];
-  dislikedEvents: EventFeedback[];
-  // Interaction history for learning
-  searchHistory: string[]; // recent search queries/contexts
-  // AI-generated persona summary (updated after each feedback)
-  aiPersonaSummary: string;
-  lastUpdated: number;
-}
+export type EventCategory =
+  | 'concert'
+  | 'comedy'
+  | 'movie'
+  | 'exhibition'
+  | 'sports'
+  | 'food'
+  | 'outdoor'
+  | 'workshop'
+  | 'theater'
+  | 'other';
 
-export interface EventFeedback {
-  eventId: string;
-  eventTitle: string;
-  category: EventCategory;
-  reason?: string; // why they liked/disliked
-  timestamp: number;
-}
+export const CATEGORY_INFO: Record<EventCategory, { label: string; icon: string; color: string }> = {
+  concert: { label: '演唱会/音乐', icon: '🎵', color: 'bg-purple-100 text-purple-700' },
+  comedy: { label: '脱口秀/喜剧', icon: '🎤', color: 'bg-yellow-100 text-yellow-700' },
+  movie: { label: '电影', icon: '🎬', color: 'bg-blue-100 text-blue-700' },
+  exhibition: { label: '展览/博物馆', icon: '🎨', color: 'bg-pink-100 text-pink-700' },
+  sports: { label: '体育赛事', icon: '⚽', color: 'bg-green-100 text-green-700' },
+  food: { label: '美食/市集', icon: '🍜', color: 'bg-orange-100 text-orange-700' },
+  outdoor: { label: '户外活动', icon: '🏕️', color: 'bg-emerald-100 text-emerald-700' },
+  workshop: { label: '工作坊/课程', icon: '📚', color: 'bg-indigo-100 text-indigo-700' },
+  theater: { label: '话剧/舞台剧', icon: '🎭', color: 'bg-red-100 text-red-700' },
+  other: { label: '其他', icon: '✨', color: 'bg-gray-100 text-gray-700' },
+};
+
+export type AppPage = 'discover' | 'preferences' | 'reminders' | 'tracked';
