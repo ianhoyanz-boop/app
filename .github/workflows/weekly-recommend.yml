@@ -1,0 +1,25 @@
+name: 周末活动推荐
+
+# 每周五中午12点（北京时间）自动运行
+on:
+  schedule:
+    - cron: '0 4 * * 5'  # UTC 4:00 = 北京时间 12:00
+  workflow_dispatch: # 也可以手动触发
+
+jobs:
+  recommend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 运行推荐引擎并推送到微信
+        env:
+          PUSH_METHOD: ${{ secrets.PUSH_METHOD }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
+          USER_PREFERENCES: ${{ secrets.USER_PREFERENCES }}
+        run: node src/index.js

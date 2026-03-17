@@ -1,21 +1,11 @@
 {
-  "name": "weeknd-planner",
-  "private": true,
+  "name": "weekend-buddy",
   "version": "1.0.0",
+  "description": "微信推送周末活动推荐助手",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "recommend": "node src/index.js",
+    "test-push": "node src/index.js --test"
   },
-  "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
-  }
+  "dependencies": {}
 }

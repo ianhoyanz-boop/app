@@ -1,0 +1,14 @@
+{
+  "push": {
+    "method": "pushplus",
+    "token": "你的PushPlus Token（去 pushplus.plus 获取）"
+  },
+  "preferences": {
+    "city": "上海",
+    "categories": ["concert", "comedy", "exhibition", "movie"],
+    "favoriteArtists": ["林俊杰", "周杰伦", "NewJeans"],
+    "interests": ["脱口秀", "音乐节", "沉浸式", "咖啡"],
+    "budget": "any",
+    "preferredDays": ["saturday", "sunday"]
+  }
+}
