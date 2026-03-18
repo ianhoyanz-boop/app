@@ -142,6 +142,10 @@ function getUpcomingWeekends(count) {
   return weekends;
 }
 
+export function fetchEventsOffline() {
+  return getMockEvents();
+}
+
 function getMockEvents() {
   const w = getUpcomingWeekends(8);
 

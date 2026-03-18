@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node src/index.js --test",
+    "preview": "node src/index.js --offline --test --html",
     "daily": "node src/index.js --daily --test"
   },
   "dependencies": {}

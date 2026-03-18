@@ -5,15 +5,17 @@
  *
  * 用法：
  *   node src/index.js          # 运行推荐 + 提醒并推送到微信
- *   node src/index.js --test   # 仅在终端预览，不推送
+ *   node src/index.js --test      # 仅在终端预览，不推送
+ *   node src/index.js --offline   # 离线模式，跳过 API 直接用示例数据
+ *   node src/index.js --html      # 生成 HTML 文件预览微信推送效果
  *
  * 运行频率（GitHub Actions）：
  *   - 每天早上9点检查紧急提醒（开票提醒、余票预警）
  *   - 每周五中午推送周末精选
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { fetchEvents } from './events.js';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { fetchEvents, fetchEventsOffline } from './events.js';
 import { getTopRecommendations } from './recommend.js';
 import { generateAlerts } from './alerts.js';
 import { formatAsHtml, formatAsText } from './format.js';
@@ -53,6 +55,8 @@ function loadConfig() {
 
 async function main() {
   const isTest = process.argv.includes('--test');
+  const isOffline = process.argv.includes('--offline');
+  const isHtml = process.argv.includes('--html');
   const isDaily = process.argv.includes('--daily'); // 每日检查模式（只推紧急+重要）
   const config = loadConfig();
   const prefs = config.preferences;
@@ -62,9 +66,15 @@ async function main() {
   console.log(`❤️  兴趣: ${[...prefs.categories, ...(prefs.interests || [])].join(', ')}`);
   console.log(`🎤 关注艺人: ${(prefs.favoriteArtists || []).join(', ') || '无'}\n`);
 
-  // 获取活动（并行请求多个数据源）
-  console.log('📡 正在获取活动数据...');
-  const events = await fetchEvents(prefs.city);
+  // 获取活动
+  let events;
+  if (isOffline) {
+    console.log('📦 离线模式，使用示例数据');
+    events = fetchEventsOffline();
+  } else {
+    console.log('📡 正在获取活动数据...');
+    events = await fetchEvents(prefs.city);
+  }
   console.log(`📋 获取到 ${events.length} 个活动`);
 
   // 生成分级提醒
@@ -107,6 +117,18 @@ async function main() {
     await pushToWechat(title, html, config);
   } else {
     console.log('（测试模式，未推送到微信）');
+  }
+
+  // --html 模式：生成 HTML 文件，可在浏览器中预览
+  if (isHtml) {
+    const html = formatAsHtml(alerts, recommendations);
+    const fullHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>WeekendBuddy 预览</title></head>
+<body style="background: #f5f5f5; margin: 0; padding: 20px;">${html}</body>
+</html>`;
+    writeFileSync('preview.html', fullHtml);
+    console.log('\n✅ 已生成 preview.html，用浏览器打开即可预览微信推送效果');
   }
 }
 
