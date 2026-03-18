@@ -62,8 +62,9 @@ async function main() {
   console.log(`❤️  兴趣: ${[...prefs.categories, ...(prefs.interests || [])].join(', ')}`);
   console.log(`🎤 关注艺人: ${(prefs.favoriteArtists || []).join(', ') || '无'}\n`);
 
-  // 获取活动
-  const events = fetchEvents();
+  // 获取活动（并行请求多个数据源）
+  console.log('📡 正在获取活动数据...');
+  const events = await fetchEvents(prefs.city);
   console.log(`📋 获取到 ${events.length} 个活动`);
 
   // 生成分级提醒
